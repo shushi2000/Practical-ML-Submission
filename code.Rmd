@@ -1,0 +1,69 @@
+---
+title: "Assignment Submission"
+author: "fllbck"
+date: "Friday, March 13, 2015"
+output: html_document
+---
+
+Initialization
+
+```{r}
+rm(list=ls())
+set.seed(3)
+require(caret)
+source('~/Dropbox/Jeff\'s course/assignment/pml_write_files.R')
+```
+
+Read in Training data
+
+```{r}
+df<-read.table("pml-training.csv", header=T, sep=',')
+```
+
+Select the numeric columns
+```{r}
+num<- sapply(df, is.numeric)
+df2=df[,num]
+```
+Then I realized many of these numeric columns mostly have NA's in them, so I decided to remove these columns too.
+
+```{r}
+df3 = df2[, colSums(is.na(df2)) == 0]
+```
+Then I attached the output colume to df3
+```{r}
+df3$classe = df$classe
+```
+I guess the timestamp doesn't really help, so I throw them away
+```{r}
+df3 = df3[, -c(2,3)]
+```
+
+Start training a neural network model
+
+````{r}
+md <- train(classe~.,
+            data = df3,
+            method = 'rf',
+            number = 3,
+            repeats = 3,
+            ntree = 100)
+```
+
+Read in test data and select the columns used in training data
+```{r}
+testData = read.table('pml-testing.csv', header = T, sep=',')
+testData2 = testData[, which(names(testData) %in% names(df3))]
+```
+Predict results
+```{r}
+class_predict_prob = predict(md, newdata = testData2, type = 'prob')
+View(class_predict_prob)
+```
+Export final results by using the code provided 
+```{r}
+predict = predict(md, newdata = testData2)
+pml_write_files(predict)
+```
+
+
